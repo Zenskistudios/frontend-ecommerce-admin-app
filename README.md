@@ -1,16 +1,50 @@
-# React + Vite
+# Stockroom — Product Admin Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Tailwind admin UI for Task 1's Product Management API: login, product
+list, and a create/edit form with the same validation rules the backend
+enforces (name required, price > 0, stock ≥ 0, description required).
 
-Currently, two official plugins are available:
+## Why it works without the backend yet
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+`src/services/api.js` exports `MOCK_MODE`, which turns on automatically when
+`VITE_API_BASE_URL` isn't set. While it's on, `productService.js` and
+`authService.js` serve data from an in-memory array instead of calling the
+network, so every screen is fully clickable. Once your backend has a route,
+set `VITE_API_BASE_URL` in `.env` (see `.env.example`) and mock mode turns
+itself off — no component code changes needed.
 
-## React Compiler
+## Install & run
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+cp .env.example .env   # edit VITE_API_BASE_URL when the backend is live
+npm run dev
+```
 
-## Expanding the ESLint configuration
+## Connecting the real backend
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Edit `src/services/productService.js` and `src/services/authService.js` if
+your routes differ from the placeholder contract:
+
+```
+GET    /products
+GET    /products/:id
+POST   /products
+PUT    /products/:id
+DELETE /products/:id
+POST   /auth/login   -> { token, user }
+```
+
+The axios instance in `src/services/api.js` already attaches
+`Authorization: Bearer <token>` from `localStorage` to every request, and
+redirects to `/login` on a 401.
+
+## Structure
+
+```
+src/
+  pages/         Login, ProductList, ProductForm
+  components/    Sidebar, ProtectedRoute, StockBadge, MockModeBanner
+  services/      api.js (axios), productService.js, authService.js
+  context/       AuthContext.jsx
+```
