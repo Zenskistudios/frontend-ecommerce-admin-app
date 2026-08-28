@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #161616;
+  --color-canvas: #f7f6f2;
+  --color-panel: #ffffff;
+
+  --color-stock-navy: #1b2340;
+  --color-stock-navy-light: #28325b;
+
+  --color-amber: #e8a23d;
+  --color-amber-dark: #c9822a;
+
+  --color-ok: #2e7d5b;
+  --color-low: #c9822a;
+  --color-out: #c1443d;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  --radius-sm: 4px;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+}
