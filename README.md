@@ -1,50 +1,154 @@
 # Stockroom — Product Admin Frontend
 
-React + Tailwind admin UI for Task 1's Product Management API: login, product
-list, and a create/edit form with the same validation rules the backend
-enforces (name required, price > 0, stock ≥ 0, description required).
+React + Tailwind admin dashboard for managing products, including login,
+listing, creation, editing, and deletion. The app matches the backend's
+validation rules and includes a mock mode for local UI development.
 
-## Why it works without the backend yet
+## Features
 
-`src/services/api.js` exports `MOCK_MODE`, which turns on automatically when
-`VITE_API_BASE_URL` isn't set. While it's on, `productService.js` and
-`authService.js` serve data from an in-memory array instead of calling the
-network, so every screen is fully clickable. Once your backend has a route,
-set `VITE_API_BASE_URL` in `.env` (see `.env.example`) and mock mode turns
-itself off — no component code changes needed.
+- Login screen with token-based authentication
+- Protected product routes
+- Product list with stock badges
+- Create/edit product form
+- Validation for:
+  - product name required
+  - price greater than zero
+  - stock quantity not negative
+  - description required
+- Mock mode fallback when no backend URL is configured
 
-## Install & run
+## Project structure
+
+```text
+src/
+  App.jsx
+  main.jsx
+  index.css
+  components/
+  context/
+  pages/
+  router/
+  services/
+```
+
+## Local development
+
+Install dependencies:
 
 ```bash
 npm install
-cp .env.example .env   # edit VITE_API_BASE_URL when the backend is live
+```
+
+Create a local environment file:
+
+```bash
+cp .env.example .env
+```
+
+Example:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+VITE_MOCK_MODE=false
+```
+
+Run the app:
+
+```bash
 npm run dev
 ```
 
-## Connecting the real backend
+## Mock mode
 
-Edit `src/services/productService.js` and `src/services/authService.js` if
-your routes differ from the placeholder contract:
+When `VITE_API_BASE_URL` is not set, the app automatically switches to mock
+mode. In that mode, the services return in-memory data so the UI stays usable
+without the real backend.
 
+This is controlled in:
+
+- [src/services/api.js](src/services/api.js)
+- [src/services/authService.js](src/services/authService.js)
+- [src/services/productService.js](src/services/productService.js)
+
+## Backend contract
+
+Expected API endpoints:
+
+```text
+POST /api/auth/login
+GET  /api/products
+GET  /api/products/:id
+POST /api/products
+PUT  /api/products/:id
+DELETE /api/products/:id
 ```
-GET    /products
-GET    /products/:id
-POST   /products
-PUT    /products/:id
-DELETE /products/:id
-POST   /auth/login   -> { token, user }
+
+Authentication uses a Bearer token stored in localStorage. The Axios client in
+[src/services/api.js](src/services/api.js) automatically attaches the token and
+redirects to the login route on 401 responses.
+
+## Production deployment
+
+This project is deployment-ready with a frontend + backend split.
+
+### Frontend config
+
+Use a production `.env` file:
+
+```env
+VITE_API_BASE_URL=https://your-backend-domain.com/api
+VITE_MOCK_MODE=false
 ```
 
-The axios instance in `src/services/api.js` already attaches
-`Authorization: Bearer <token>` from `localStorage` to every request, and
-redirects to `/login` on a 401.
+A production SPA rewrite file is included at [vercel.json](vercel.json):
 
-## Structure
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
 
+### Backend config
+
+The backend is in the [ecommerce-backend](ecommerce-backend) folder. Production env
+values should include:
+
+```env
+PORT=10000
+NODE_ENV=production
+JWT_SECRET=replace-with-a-long-random-secret
+JWT_EXPIRES_IN=7d
 ```
-src/
-  pages/         Login, ProductList, ProductForm
-  components/    Sidebar, ProtectedRoute, StockBadge, MockModeBanner
-  services/      api.js (axios), productService.js, authService.js
-  context/       AuthContext.jsx
+
+Render deployment config is included at [ecommerce-backend/render.yaml](ecommerce-backend/render.yaml).
+
+## Deployment notes
+
+The project was verified to build successfully after installing dependencies:
+
+```bash
+npm install
+npm run build
 ```
+
+The backend was also validated and confirmed to fail on port conflicts when
+`8000` is already occupied, which is why production config uses a different port
+in the deployment example.
+
+## Default admin login
+
+For the local/dev backend:
+
+- Email: `admin@stockroom.com`
+- Password: `admin123`
+
+## Important production security note
+
+Do not keep the default JWT secret or demo admin credentials in a live deploy.
+Use a strong secret and ideally replace the seeded admin account in production.
+
+## License
+
+This project is intended for educational/demo use in the Stockroom admin app setup.

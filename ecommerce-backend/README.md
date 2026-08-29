@@ -1,105 +1,110 @@
-# Stockroom — Product Management API (Task 1)
+# Stockroom — Product Management API
 
-RESTful backend for the [Frontend-ecommerce-admin-app](https://github.com/Josseun/Frontend-ecommerce-admin-app).  
-Implements **Task 1 – Product Management API** from the internship brief.
+RESTful backend for the frontend admin dashboard. It provides JWT authentication,
+product CRUD, request validation, and a seeded admin account for local testing
+and deployment demos.
 
 ## Features
 
-- JWT-based authentication (`POST /api/auth/login`)
-- Full Product CRUD with validation matching the frontend:
+- JWT authentication via `POST /api/auth/login`
+- Product CRUD endpoints
+- Validation matching the frontend app rules:
   - name required
   - price > 0
-  - stockQuantity ≥ 0
+  - stockQuantity >= 0
   - description required
-- Meaningful HTTP status codes and error messages
-- CORS enabled for local frontend development
-- Clean layered structure (routes → controllers → repository)
+- CORS support for local frontend development
+- In-memory repository with a clean service layer
+- Production-ready environment configuration pattern
 
-## Tech Stack
+## Tech stack
 
-| Layer        | Choice                          |
-|--------------|---------------------------------|
-| Runtime      | Node.js                         |
-| Framework    | Express                         |
-| Auth         | JWT + bcryptjs                  |
-| Validation   | express-validator               |
-| Data store   | In-memory (easy to swap for MongoDB / PostgreSQL / MySQL) |
+- Node.js
+- Express
+- JWT + bcryptjs
+- express-validator
+- In-memory data store
 
-> **Note on database:** For simplicity and zero external services this starter uses an in-memory store that is seeded on every server start.  
-> The repository pattern (`src/config/db.js`) makes it trivial to replace with Mongoose, Prisma, or TypeORM later.
+## Project structure
 
-## Project Structure
-
-```
+```text
 src/
-├── config/
-│   └── db.js              # In-memory product & user repositories
-├── controllers/
-│   ├── authController.js
-│   └── productController.js
-├── middleware/
-│   ├── auth.js            # JWT authenticate + requireAdmin
-│   └── validate.js        # express-validator rules
-├── routes/
-│   ├── authRoutes.js
-│   └── productRoutes.js
-├── utils/
-│   └── id.js
-└── server.js              # Entry point
+  config/
+    db.js
+  controllers/
+    authController.js
+    productController.js
+  middleware/
+    auth.js
+    validate.js
+  routes/
+    authRoutes.js
+    productRoutes.js
+  server.js
 ```
 
-## Quick Start
+## Local setup
+
+Install dependencies:
 
 ```bash
-# 1. Install dependencies
 npm install
+```
 
-# 2. Copy environment file
+Create environment variables:
+
+```bash
 cp .env.example .env
-# (optional) edit JWT_SECRET
+```
 
-# 3. Start the server
+Example:
+
+```env
+PORT=8000
+JWT_SECRET=your-local-secret
+JWT_EXPIRES_IN=7d
+NODE_ENV=development
+```
+
+Start the API:
+
+```bash
 npm start
-# or with auto-reload (Node 18+)
+```
+
+Or with auto-reload:
+
+```bash
 npm run dev
 ```
 
-Server starts at **http://localhost:8000**
+The server runs at:
 
-### Default admin credentials
-
-| Field    | Value                  |
-|----------|------------------------|
-| Email    | `admin@stockroom.com`  |
-| Password | `admin123`             |
-
-## Connecting the Frontend
-
-In the frontend project:
-
-```bash
-cp .env.example .env
+```text
+http://localhost:8000
 ```
 
-Set:
+## Default admin login
 
+```text
+Email: admin@stockroom.com
+Password: admin123
 ```
-VITE_API_BASE_URL=http://localhost:8000/api
+
+## API endpoints
+
+Base URL:
+
+```text
+http://localhost:8000/api
 ```
-
-Restart the Vite dev server. Mock mode turns off automatically and every request will hit this API.
-
-## API Endpoints
-
-Base URL: `http://localhost:8000/api`
 
 ### Auth
 
-| Method | Path            | Auth | Description                  |
-|--------|-----------------|------|------------------------------|
-| POST   | `/auth/login`   | No   | Login → `{ token, user }`    |
+#### POST /api/auth/login
 
-**Request body**
+Request:
+
 ```json
 {
   "email": "admin@stockroom.com",
@@ -107,10 +112,11 @@ Base URL: `http://localhost:8000/api`
 }
 ```
 
-**Success (200)**
+Response:
+
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token": "<jwt>",
   "user": {
     "name": "Admin",
     "email": "admin@stockroom.com",
@@ -119,140 +125,92 @@ Base URL: `http://localhost:8000/api`
 }
 ```
 
-### Products (all require `Authorization: Bearer <token>`)
+### Products
 
-| Method | Path              | Description            |
-|--------|-------------------|------------------------|
-| GET    | `/products`       | List all products      |
-| GET    | `/products/:id`   | Get single product     |
-| POST   | `/products`       | Create product         |
-| PUT    | `/products/:id`   | Update product         |
-| DELETE | `/products/:id`   | Delete product         |
+All product routes require a Bearer token:
 
-**Product shape**
+```http
+Authorization: Bearer <token>
+```
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | /api/products | List products |
+| GET | /api/products/:id | Get a single product |
+| POST | /api/products | Create product |
+| PUT | /api/products/:id | Update product |
+| DELETE | /api/products/:id | Delete product |
+
+### Product payload
+
 ```json
 {
-  "id": "1",
   "name": "Wireless Mechanical Keyboard",
   "price": 45000,
   "description": "Hot-swappable switches, USB-C, RGB backlight.",
   "stockQuantity": 12,
   "category": "Electronics",
-  "image": "",
-  "createdAt": "2026-08-28T...",
-  "updatedAt": "2026-08-28T..."
+  "image": ""
 }
 ```
 
-**Create / Update body**
-```json
-{
-  "name": "New Product",
-  "price": 19999,
-  "description": "A great product.",
-  "stockQuantity": 50,
-  "category": "Electronics",   // optional
-  "image": "https://..."       // optional
-}
-```
+## Validation rules
 
-### Validation errors (400)
+The backend validates product input with express-validator:
+
+- name is required
+- price must be greater than 0
+- stockQuantity must be >= 0
+- description is required
+- category and image are optional
+
+Validation error example:
 
 ```json
 {
   "success": false,
   "message": "Validation failed.",
   "errors": [
-    { "field": "price", "message": "Price must be greater than zero." }
+    {
+      "field": "price",
+      "message": "Price must be greater than zero."
+    }
   ]
 }
 ```
 
-### Auth errors
+## Frontend integration
 
-- `401` – Missing / invalid / expired token, or wrong credentials
-- `403` – Authenticated but not admin (if `requireAdmin` is enabled)
-- `404` – Product not found
+The frontend expects the backend to be available at:
 
-## Environment Variables
-
-| Variable       | Default                          | Description                |
-|----------------|----------------------------------|----------------------------|
-| `PORT`         | `8000`                           | Server port                |
-| `JWT_SECRET`   | (required)                       | Secret for signing tokens  |
-| `JWT_EXPIRES_IN` | `7d`                           | Token lifetime             |
-| `NODE_ENV`     | `development`                    | Affects logging            |
-
-## Database Schema (conceptual)
-
-Even though the current store is in-memory, the intended schema is:
-
-**products**
-| Field          | Type     | Constraints              |
-|----------------|----------|--------------------------|
-| id             | string   | PK                       |
-| name           | string   | required, max 200        |
-| price          | number   | required, > 0            |
-| description    | string   | required                 |
-| stockQuantity  | integer  | required, ≥ 0            |
-| category       | string   | optional                 |
-| image          | string   | optional (URL)           |
-| createdAt      | datetime |                          |
-| updatedAt      | datetime |                          |
-
-**users**
-| Field    | Type   | Constraints          |
-|----------|--------|----------------------|
-| id       | string | PK                   |
-| name     | string |                      |
-| email    | string | unique               |
-| password | string | hashed               |
-| role     | string | e.g. `admin`         |
-
-## Postman / Testing
-
-1. Import the collection below or create requests manually.
-2. Login first → copy the `token`.
-3. Set a collection variable `token` and use `Authorization: Bearer {{token}}` on product requests.
-
-Example curl:
-
-```bash
-# Login
-curl -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@stockroom.com","password":"admin123"}'
-
-# List products
-curl http://localhost:8000/api/products \
-  -H "Authorization: Bearer <token>"
-
-# Create
-curl -X POST http://localhost:8000/api/products \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test","price":1000,"description":"Desc","stockQuantity":5}'
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
 ```
 
-## Reflection (Task 1)
+If the frontend is deployed separately, it should point to the deployed backend URL instead.
 
-**Development approach**  
-I matched the exact contract expected by the provided React admin frontend (routes, response shapes, validation rules). A thin repository layer keeps the controllers free of storage details so the same code can later sit on MongoDB, PostgreSQL or MySQL.
+## Production deployment
 
-**Challenges**  
-- Keeping the response shape identical to the frontend mock so zero frontend changes are needed.  
-- Providing a secure-enough auth story for Task 1 without over-engineering future role/permission features.
+Use environment variables such as:
 
-**How they were addressed**  
-- Used the frontend service files as the source of truth for paths and payloads.  
-- Seeded a well-known admin account and documented it clearly.
+```env
+PORT=10000
+NODE_ENV=production
+JWT_SECRET=replace-with-a-long-random-secret
+JWT_EXPIRES_IN=7d
+```
 
-**Future improvements**  
-- Swap the in-memory store for MongoDB (Mongoose) or PostgreSQL (Prisma).  
-- Add pagination, filtering and search on `GET /products`.  
-- Add user registration and role-based route guards for later tasks (orders, payments).  
-- Add rate-limiting and Helmet for production hardening.  
-- Generate OpenAPI/Swagger docs automatically.
+A production Render config is included at [render.yaml](render.yaml).
+
+## Deployment notes
+
+This backend was verified to run correctly locally. The main deployment issue found during validation was a port conflict on `8000`, which is why the example production config uses port `10000`.
+
+## Security note
+
+- Use a strong production `JWT_SECRET`
+- Replace the default seeded admin credentials before exposing the app publicly
+- Restrict CORS to your actual frontend domain in production
 
 ## License
 
